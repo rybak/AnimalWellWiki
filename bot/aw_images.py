@@ -124,7 +124,7 @@ def main(*args):
         return True
 
 
-    templates_ready = ['Copyright game', 'CC0', 'CC-BY-SA-3.0']
+    templates_ready = ['Copyright game', 'CC0', 'CC-BY-SA-3.0', 'Copyright missing', 'Delete']
     site = pywikibot.Site()
     looked_at = set()
     # https://animalwell.wiki.gg/api.php?action=query&list=allpages&apnamespace=6
