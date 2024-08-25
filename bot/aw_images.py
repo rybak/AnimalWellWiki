@@ -44,7 +44,7 @@ import requests
 
 import pywikibot
 from pywikibot.pagegenerators import AllpagesPageGenerator
-from pywikibot.exceptions import NoPageError, IsRedirectPageError, Error
+from pywikibot import exceptions
 from pywikibot.bot_choice import QuitKeyboardInterrupt
 from pywikibot.tools.formatter import color_format
 from pywikibot.textlib import getCategoryLinks
@@ -68,9 +68,9 @@ def put_text(page, new, summary, count, asynchronous=False):
     try:
         page.save(summary=summary, asynchronous=asynchronous,
                   minor=page.namespace() != 3)
-    except pywikibot.EditConflict:
+    except pywikibot.exceptions.EditConflictError:
         pywikibot.output('Edit conflict! skip!')
-    except pywikibot.ServerError:
+    except pywikibot.exceptions.ServerError:
         if count <= config.max_retries:
             pywikibot.output('Server Error! Wait..')
             pywikibot.sleep(config.retry_wait)
@@ -78,13 +78,13 @@ def put_text(page, new, summary, count, asynchronous=False):
         else:
             raise pywikibot.ServerError(
                 'Server Error! Maximum retries exceeded')
-    except pywikibot.SpamfilterError as e:
+    except exceptions.SpamblacklistError as e:
         pywikibot.output(
             'Cannot change {} because of blacklist entry {}'
             .format(page.title(), e.url))
-    except pywikibot.LockedPage:
+    except exceptions.LockedPageError:
         pywikibot.output('Skipping {} (locked page)'.format(page.title()))
-    except pywikibot.PageNotSaved as error:
+    except exceptions.PageSaveRelatedError as error:
         pywikibot.output('Error putting page: {}'.format(error.args))
     else:
         return True
@@ -251,13 +251,13 @@ def main(*args):
                 break
 
         # https://doc.wikimedia.org/pywikibot/master/api_ref/exceptions.html#exceptions.NoPageError
-        except NoPageError:
+        except exceptions.NoPageError:
             pywikibot.error("{} doesn't exist, skipping.".format(page.title()))
             continue
-        except IsRedirectPageError:
+        except exceptions.IsRedirectPageError:
             pywikibot.error("{} is a redirect, skipping".format(page.title()))
             continue
-        except Error as e:
+        except exceptions.Error as e:
             pywikibot.bot.suggest_help(exception=e)
             continue
         except QuitKeyboardInterrupt:
