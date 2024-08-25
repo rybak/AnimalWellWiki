@@ -264,7 +264,8 @@ def main(*args):
                 while True:
                     result = put_text(page, new_text, edit_summary, error_count)
                     if result is not None:
-                        pywikibot.output("Got result of saving: {}".format(result))
+                        result_color = 'lightgreen' if result else 'red'
+                        pywikibot.output("Got result of saving: <<{}>>{}<<default>>".format(result_color, result))
                         break
                     error_count += 1
                 continue
