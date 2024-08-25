@@ -183,6 +183,11 @@ def main(*args):
                 summary = summary.strip()
                 if summary[-1] == '.':
                     summary = summary[0:-1]
+
+                # Lots of images have descriptions like 'Brick Egg2', but we just want the 'Brick Egg' portion.
+                if '2' in summary:
+                    summary = summary.replace('2', '')
+                # if the word "location" is mentioned, we want to wikilink the other word
                 if 'ocation' in summary:
                     maybe_page = LOCATION_REGEX.sub(string=summary, repl='').strip().capitalize()
                     summary = 'Location of [[' + maybe_page + ']].'
