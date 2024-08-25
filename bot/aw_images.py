@@ -140,6 +140,7 @@ def main(*args):
             click_url = ROOT_URL + '/wiki/' + page.title(underscore=True)
             pywikibot.output("Page '{0}' | {1}".format(page_title, click_url))
             ts = page.templatesWithParams()
+            verb = 'add'
             if len(ts) > 0:
                 found_ready = False
                 for t in ts:
@@ -148,6 +149,8 @@ def main(*args):
                             pywikibot.output("Page <<lightgreen>>{0}<<default>> has template: {1}".format(page_title, t[0]))
                             found_ready = True
                             break
+                    if 'License/DEVELOPER NAME HERE' in t[0].title():
+                        verb = 'use'
                 if found_ready:
                     pywikibot.output("\tSkipping.")
                     continue
@@ -232,7 +235,7 @@ def main(*args):
             # report what will happen
             pywikibot.showDiff(old_text, new_text, context=3)
 
-            base_summary = "add [[Template:Copyright game]]" + BOT_TASK_AD
+            base_summary = "{} [[Template:Copyright game]]".format(verb) + BOT_TASK_AD
             edit_summary = f"{base_summary} ({extra_summary})" if extra_summary else base_summary
 
             pywikibot.output("Edit summary will be\n\t<<lightblue>>{0}<<default>>".format(edit_summary))
