@@ -169,8 +169,12 @@ def main(*args):
                     licensing = section[1]
             got_summary_from_header = False
             if summary is None:
-                got_summary_from_header = True
-                summary = header
+                if page_title.startswith('File:Egg-'):
+                    summary = page_title.replace('File:Egg-', '').replace('.png', '') + ' ' + 'Egg'
+                else:
+                    if len(header) > 0:
+                        got_summary_from_header = True
+                        summary = header
 
             new_text = None
             pywikibot.output("Editing page <<lightblue>>{0}<<default>>.".format(page_title))
@@ -196,6 +200,8 @@ def main(*args):
                     summary = 'Location of [[' + maybe_page + ']].'
                 elif 'Egg' in summary:
                     summary = '[[' + summary + ']]'
+                    if page_title.startswith('File:Egg-'):
+                        summary = summary + " texture"
 
                 pywikibot.output("Will have \"Summary\" section:\n\t{}".format(summary))
                 choice = pywikibot.input_choice("Is it a good summary?",
