@@ -12,6 +12,8 @@
 # Move to the checkout dir of pywikibot's core (stable branch is recommended)
 cd "$(dirname $0)/bot/$BOT_LOCATION"
 
+python pwb.py login
+
 # Execute the bot script $SCRIPT_NAME with all given CLI arguments
 # see https://support.wiki.gg/wiki/Pywikibot for more info
 exec python pwb.py $SCRIPT_NAME "${@}"
