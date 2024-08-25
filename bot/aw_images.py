@@ -46,7 +46,6 @@ import pywikibot
 from pywikibot.pagegenerators import AllpagesPageGenerator
 from pywikibot import exceptions
 from pywikibot.bot_choice import QuitKeyboardInterrupt
-from pywikibot.tools.formatter import color_format
 from pywikibot.textlib import getCategoryLinks
 from pywikibot.textlib import extract_sections
 
@@ -142,8 +141,7 @@ def main(*args):
                 for t in ts:
                     for r in templates_ready:
                         if r in t[0].title():
-                            pywikibot.output(color_format("Page {lightgreen}{0}{default} has template: {1}",
-                                page_title, t[0]))
+                            pywikibot.output("Page <<lightgreen>>{0}<<default>> has template: {1}".format(page_title, t[0]))
                             found_ready = True
                             break
                 if found_ready:
@@ -168,7 +166,7 @@ def main(*args):
                 summary = header
 
             new_text = None
-            pywikibot.output(color_format("Editing page {lightblue}{0}{default}.", page_title))
+            pywikibot.output("Editing page <<lightblue>>{0}<<default>>.".format(page_title))
             if summary is not None and len(summary.strip()) > 0:
                 summary = summary.strip()
                 pywikibot.output("Have \"Summary\":\n\t{}".format(summary))
@@ -222,8 +220,7 @@ def main(*args):
             base_summary = "add [[Template:Copyright game]]" + BOT_TASK_AD
             edit_summary = f"{base_summary} ({extra_summary})" if extra_summary else base_summary
 
-            pywikibot.output(color_format("Edit summary will be" +
-                "\n\t{lightblue}{0}{default}", edit_summary))
+            pywikibot.output("Edit summary will be\n\t<<lightblue>>{0}<<default>>".format(edit_summary))
             choice = pywikibot.input_choice(
                 "Do you want to accept these changes?",
                 [('Yes', 'y'), ('No', 'n'), ('open in Browser', 'b')], 'n')
