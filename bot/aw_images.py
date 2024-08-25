@@ -39,6 +39,7 @@ Example:
 from __future__ import absolute_import, division, unicode_literals
 
 import sys
+import re
 from textwrap import dedent
 import requests
 
@@ -88,6 +89,9 @@ def put_text(page, new, summary, count, asynchronous=False):
     else:
         return True
     return False
+
+
+LOCATION_REGEX = re.compile('[lL]ocation([.]| of)?')
 
 
 def main(*args):
@@ -179,6 +183,12 @@ def main(*args):
                 summary = summary.strip()
                 if summary[-1] == '.':
                     summary = summary[0:-1]
+                if 'ocation' in summary:
+                    maybe_page = LOCATION_REGEX.sub(string=summary, repl='').strip().capitalize()
+                    summary = 'Location of [[' + maybe_page + ']].'
+                elif 'Egg' in summary:
+                    summary = '[[' + summary + ']]'
+
                 pywikibot.output("Will have \"Summary\" section:\n\t{}".format(summary))
                 choice = pywikibot.input_choice("Is it a good summary?",
                     [('Yes', 'y'), ('No', 'n'), ('open in Browser', 'b')], 'n')
