@@ -233,7 +233,7 @@ def main(*args):
                 # if the word "location" is mentioned, we want to wikilink the other word
                 if 'ocation' in summary:
                     maybe_page = LOCATION_REGEX.sub(string=summary, repl='').strip().capitalize()
-                    summary = 'location of [[' + maybe_page + ']]'
+                    summary = 'the location of [[' + maybe_page + ']]'
                 elif 'Egg' in summary:
                     summary = '[[' + summary + ']]'
                     if page_is_egg_texture:
