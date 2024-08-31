@@ -133,6 +133,7 @@ def main(*args):
 
 
     templates_licensing_ready = ['Copyright game', 'CC0', 'CC-BY-SA-3.0', 'Copyright missing', 'Delete', 'CC-BY-NC-SA']
+    templates_description_ready = ['Map screenshot', 'Screenshot', 'File information', 'Datamined texture']
     site = pywikibot.Site()
     looked_at = set()
     # https://animalwell.wiki.gg/api.php?action=query&list=allpages&apnamespace=6
@@ -158,12 +159,18 @@ def main(*args):
             copyright_game_ready = False
             if len(ts) > 0:
                 for t in ts:
+                    template_name = t[0].title()
+                    print('>>> ' + template_name + " <<<<")
                     for r in templates_licensing_ready:
-                        if r in t[0].title():
-                            pywikibot.output("Page <<lightgreen>>{0}<<default>> has template: {1}".format(page_title, t[0]))
+                        if r in template_name:
+                            pywikibot.output("Page {0} has licensing template: <<lightblue>>{1}<<default>>".format(page_title, template_name))
                             licensing_ready = True
                             break
-                    template_name = t[0].title()
+                    for r in templates_description_ready:
+                        if r in template_name:
+                            pywikibot.output("Page {0} has summary template: <<lightblue>>{1}<<default>>".format(page_title, template_name))
+                            description_ready = True
+                            break
                     if 'Egg texture' in template_name:
                         description_ready = True
                         egg_texture_ready = True
@@ -173,13 +180,11 @@ def main(*args):
                     if 'Copyright game' in template_name:
                         pywikibot.output("Template <<lightblue>>{{Copyright game}}<<default>> is already used")
                         copyright_game_ready = True
-                    if 'Screenshot' in template_name or 'Map screenshot' in template_name:
-                        pywikibot.output("Template <<lightblue>>{{" + template_name + "}}<<default>> is already used")
-                        description_ready = True
                     if 'Delete' in template_name:
                         pywikibot.output("File is marked for <<yellow>>deletion<<default>>")
                         description_ready = True
                         licensing_ready = True
+
 
             old_text = page.get()
             # categories = getCategoryLinks(old_text, site)
@@ -205,6 +210,10 @@ def main(*args):
             edit_summary_elements = []
             new_text = None
             pywikibot.output("Editing page <<lightblue>>{0}<<default>>.".format(page_title))
+
+            if description_ready and summary is not None:
+                description = summary.strip()
+
             if summary is not None and len(summary.strip()) > 0 and (not description_ready):
                 summary = summary.strip()
                 pywikibot.output("Have \"Summary\":\n\t{}".format(summary))
@@ -242,7 +251,7 @@ def main(*args):
                             ('Screenshot', 's'), ('Map screenshot', 'm'), ('Ready', 'r'),
                             ('open in Browser', 'b') ], 'n')
                 if choice == 'y':
-                    description = summary
+                    description = summary.strip()
                 elif choice == 'n':
                     pass
                 elif choice == 'm':
@@ -252,6 +261,7 @@ def main(*args):
                 elif choice == 'b':
                     pywikibot.bot.open_webbrowser(page)
                 elif choice == 'r':
+                    description = summary.strip()
                     description_ready = True
 
             if description_ready and (not copyright_game_ready and licensing_ready):
@@ -266,7 +276,7 @@ def main(*args):
                     pywikibot.output("\t<<lightgreen>>Skipping<<default>> ready game file page.")
                     continue
 
-            if description is None:
+            if (not description_ready) and (description is None):
                 pywikibot.output("Type '[s]kip' to skip the image completely.")
                 description = pywikibot.input("Please describe the file:")
                 if description in ['s', 'skip']:
@@ -280,7 +290,7 @@ def main(*args):
 
                 == Licensing ==
                 {{{{Copyright game}}}}
-                """.format(description)).strip()
+                """.format(description.strip())).strip()
             header = header.strip()
             if not got_summary_from_header and len(header) > 0:
                 new_text = header + '\n\n' + new_text
@@ -297,6 +307,7 @@ def main(*args):
             edit_summary_elements.extend(template_edit_summary_element(old_text, new_text, 'Map screenshot'))
             edit_summary_elements.extend(template_edit_summary_element(old_text, new_text, 'Screenshot'))
             edit_summary_elements.extend(template_edit_summary_element(old_text, new_text, 'Egg texture'))
+            edit_summary_elements.extend(template_edit_summary_element(old_text, new_text, 'File information'))
 
             automatic_edit = False
             if page_is_egg_texture:
