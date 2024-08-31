@@ -52,7 +52,7 @@ from pywikibot.textlib import extract_sections
 
 
 DEBUG = False
-BOT_TASK_AD = ' ([[User:AndrybakBot/Image copyright]])'
+BOT_TASK_AD = '([[User:AndrybakBot/Image page cleanup]])'
 # https://www.mediawiki.org/wiki/Manual:Namespace
 FILE_NAMESPACE_ID = 6
 ROOT_URL = 'https://animalwell.wiki.gg'
@@ -137,10 +137,15 @@ def main(*args):
             looked_at.add(page.title())
         try:
             page_title = page.title()
+            page_is_egg_texture = page_title.startswith('File:Egg-')
+            if page_is_egg_texture:
+                pywikibot.output("Detected <<lightblue>>egg texture<<default>> page name.")
             click_url = ROOT_URL + '/wiki/' + page.title(underscore=True)
             pywikibot.output("Page '{0}' | {1}".format(page_title, click_url))
             ts = page.templatesWithParams()
             verb = 'add'
+            egg_texture_ready = False
+            copyright_game_ready = False
             if len(ts) > 0:
                 found_ready = False
                 for t in ts:
@@ -149,11 +154,27 @@ def main(*args):
                             pywikibot.output("Page <<lightgreen>>{0}<<default>> has template: {1}".format(page_title, t[0]))
                             found_ready = True
                             break
-                    if 'License/DEVELOPER NAME HERE' in t[0].title():
+                    template_name = t[0].title()
+                    if 'Egg texture' in template_name:
+                        egg_texture_ready = True
+                    if 'License/DEVELOPER NAME HERE' in template_name:
+                        pywikibot.output("Template <<yellow>>{{License/DEVELOPER NAME HERE}}<<default>> is used")
                         verb = 'use'
-                if found_ready:
-                    pywikibot.output("\tSkipping.")
+                    if 'Copyright game' in template_name:
+                        pywikibot.output("Template <<lightblue>>{{Copyright game}}<<default>> is already used")
+                        copyright_game_ready = True
+
+                if not copyright_game_ready and found_ready:
+                    pywikibot.output("\t<<lightgreen>>Skipping<<default>> ready non-game file page.")
                     continue
+                if page_is_egg_texture:
+                    if egg_texture_ready and copyright_game_ready:
+                        pywikibot.output("\t<<lightgreen>>Skipping<<default>> ready egg texture.")
+                        continue
+                else:
+                    if found_ready:
+                        pywikibot.output("\t<<lightgreen>>Skipping<<default>> ready game file page.")
+                        continue
 
             old_text = page.get()
             # categories = getCategoryLinks(old_text, site)
@@ -169,8 +190,8 @@ def main(*args):
                     licensing = section[1]
             got_summary_from_header = False
             if summary is None:
-                if page_title.startswith('File:Egg-'):
-                    summary = page_title.replace('File:Egg-', '').replace('.png', '') + ' ' + 'Egg'
+                if page_is_egg_texture:
+                    summary = "{{Egg texture}}"
                 else:
                     if len(header) > 0:
                         got_summary_from_header = True
@@ -200,12 +221,14 @@ def main(*args):
                     summary = 'Location of [[' + maybe_page + ']].'
                 elif 'Egg' in summary:
                     summary = '[[' + summary + ']]'
-                    if page_title.startswith('File:Egg-'):
-                        summary = summary + " texture"
+                    if page_is_egg_texture:
+                        choice = 'y'
+                        summary = "{{Egg texture}}"
 
                 pywikibot.output("Will have \"Summary\" section:\n\t{}".format(summary))
-                choice = pywikibot.input_choice("Is it a good summary?",
-                    [('Yes', 'y'), ('No', 'n'), ('open in Browser', 'b')], 'n')
+                if not page_is_egg_texture:
+                    choice = pywikibot.input_choice("Is it a good summary?",
+                        [('Yes', 'y'), ('No', 'n'), ('open in Browser', 'b')], 'n')
                 if choice == 'y':
                     description = summary
                 elif choice == 'n':
@@ -241,13 +264,25 @@ def main(*args):
             # report what will happen
             pywikibot.showDiff(old_text, new_text, context=3)
 
-            base_summary = "{} [[Template:Copyright game]]".format(verb) + BOT_TASK_AD
+            automatic_edit = False
+            edit_summary_elements = []
+            if page_is_egg_texture:
+                automatic_edit = True
+                edit_summary_elements.append('add [[Template:Egg texture]]')
+            if not copyright_game_ready:
+                edit_summary_elements.append("{} [[Template:Copyright game]]".format(verb))
+            edit_summary_elements.append(BOT_TASK_AD)
+            base_summary = "; ".join(edit_summary_elements)
             edit_summary = f"{base_summary} ({extra_summary})" if extra_summary else base_summary
 
             pywikibot.output("Edit summary will be\n\t<<lightblue>>{0}<<default>>".format(edit_summary))
-            choice = pywikibot.input_choice(
-                "Do you want to accept these changes?",
-                [('Yes', 'y'), ('No', 'n'), ('open in Browser', 'b')], 'n')
+            if automatic_edit:
+                pywikibot.output("Accepting changes automatically...")
+                choice = 'y'
+            else:
+                choice = pywikibot.input_choice(
+                    "Do you want to accept these changes?",
+                    [('Yes', 'y'), ('No', 'n'), ('open in Browser', 'b')], 'n')
 
             # uncomment when testing
             # if choice == 'y':
