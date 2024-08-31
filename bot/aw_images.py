@@ -254,6 +254,7 @@ def main(*args):
                     choice = pywikibot.input_choice("Keep this description?",
                         [('Yes', 'y'), ('No', 'n'),
                             ('Screenshot', 's'), ('Map screenshot', 'm'), ('Ready', 'r'),
+                            ('Link screenshot', 'l'),
                             ('open in Browser', 'b') ], 'n')
                 if choice == 'y':
                     description = summary.strip()
@@ -263,6 +264,8 @@ def main(*args):
                     description = "{{Map screenshot|" + summary + "}}"
                 elif choice == 's':
                     description = "{{Screenshot|" + summary + "}}"
+                elif choice == 'l':
+                    description = "{{Screenshot|[[" + summary + "]]}}"
                 elif choice == 'b':
                     pywikibot.bot.open_webbrowser(page)
                 elif choice == 'r':
