@@ -92,6 +92,7 @@ def put_text(page, new, summary, count, asynchronous=False):
 
 
 LOCATION_REGEX = re.compile('[lL]ocation([.]| of)?')
+DIGITS_REGEX = re.compile('[0-9]')
 
 
 def main(*args):
@@ -124,7 +125,14 @@ def main(*args):
         return True
 
 
-    templates_ready = ['Copyright game', 'CC0', 'CC-BY-SA-3.0', 'Copyright missing', 'Delete', 'CC-BY-NC-SA']
+    def template_edit_summary_element(old_text, new_text, template):
+        syntax = '{{' + template
+        if (syntax in new_text) and (syntax not in old_text):
+            return [ "add [[Template:" + template + "]]" ]
+        return []
+
+
+    templates_licensing_ready = ['Copyright game', 'CC0', 'CC-BY-SA-3.0', 'Copyright missing', 'Delete', 'CC-BY-NC-SA']
     site = pywikibot.Site()
     looked_at = set()
     # https://animalwell.wiki.gg/api.php?action=query&list=allpages&apnamespace=6
@@ -144,18 +152,20 @@ def main(*args):
             pywikibot.output("Page '{0}' | {1}".format(page_title, click_url))
             ts = page.templatesWithParams()
             verb = 'add'
+            description_ready = False
             egg_texture_ready = False
+            licensing_ready = False
             copyright_game_ready = False
             if len(ts) > 0:
-                found_ready = False
                 for t in ts:
-                    for r in templates_ready:
+                    for r in templates_licensing_ready:
                         if r in t[0].title():
                             pywikibot.output("Page <<lightgreen>>{0}<<default>> has template: {1}".format(page_title, t[0]))
-                            found_ready = True
+                            licensing_ready = True
                             break
                     template_name = t[0].title()
                     if 'Egg texture' in template_name:
+                        description_ready = True
                         egg_texture_ready = True
                     if 'License/DEVELOPER NAME HERE' in template_name:
                         pywikibot.output("Template <<yellow>>{{License/DEVELOPER NAME HERE}}<<default>> is used")
@@ -163,18 +173,13 @@ def main(*args):
                     if 'Copyright game' in template_name:
                         pywikibot.output("Template <<lightblue>>{{Copyright game}}<<default>> is already used")
                         copyright_game_ready = True
-
-                if not copyright_game_ready and found_ready:
-                    pywikibot.output("\t<<lightgreen>>Skipping<<default>> ready non-game file page.")
-                    continue
-                if page_is_egg_texture:
-                    if egg_texture_ready and copyright_game_ready:
-                        pywikibot.output("\t<<lightgreen>>Skipping<<default>> ready egg texture.")
-                        continue
-                else:
-                    if found_ready:
-                        pywikibot.output("\t<<lightgreen>>Skipping<<default>> ready game file page.")
-                        continue
+                    if 'Screenshot' in template_name or 'Map screenshot' in template_name:
+                        pywikibot.output("Template <<lightblue>>{{" + template_name + "}}<<default>> is already used")
+                        description_ready = True
+                    if 'Delete' in template_name:
+                        pywikibot.output("File is marked for <<yellow>>deletion<<default>>")
+                        description_ready = True
+                        licensing_ready = True
 
             old_text = page.get()
             # categories = getCategoryLinks(old_text, site)
@@ -197,9 +202,10 @@ def main(*args):
                         got_summary_from_header = True
                         summary = header
 
+            edit_summary_elements = []
             new_text = None
             pywikibot.output("Editing page <<lightblue>>{0}<<default>>.".format(page_title))
-            if summary is not None and len(summary.strip()) > 0:
+            if summary is not None and len(summary.strip()) > 0 and (not description_ready):
                 summary = summary.strip()
                 pywikibot.output("Have \"Summary\":\n\t{}".format(summary))
                 i = summary.find('{')
@@ -218,23 +224,48 @@ def main(*args):
                 # if the word "location" is mentioned, we want to wikilink the other word
                 if 'ocation' in summary:
                     maybe_page = LOCATION_REGEX.sub(string=summary, repl='').strip().capitalize()
-                    summary = 'Location of [[' + maybe_page + ']].'
+                    summary = 'location of [[' + maybe_page + ']]'
                 elif 'Egg' in summary:
                     summary = '[[' + summary + ']]'
                     if page_is_egg_texture:
                         choice = 'y'
                         summary = "{{Egg texture}}"
+                    else:
+                        # Remove disambiguation indexes from filenames, which were converted into wikilinks
+                        # one exception not covered: filenames related to 65th Egg
+                        summary = DIGITS_REGEX.sub('', summary)
 
                 pywikibot.output("Will have \"Summary\" section:\n\t{}".format(summary))
                 if not page_is_egg_texture:
-                    choice = pywikibot.input_choice("Is it a good summary?",
-                        [('Yes', 'y'), ('No', 'n'), ('open in Browser', 'b')], 'n')
+                    choice = pywikibot.input_choice("Keep this description?",
+                        [('Yes', 'y'), ('No', 'n'),
+                            ('Screenshot', 's'), ('Map screenshot', 'm'), ('Ready', 'r'),
+                            ('open in Browser', 'b') ], 'n')
                 if choice == 'y':
                     description = summary
                 elif choice == 'n':
                     pass
+                elif choice == 'm':
+                    description = "{{Map screenshot|" + summary + "}}"
+                elif choice == 's':
+                    description = "{{Screenshot|" + summary + "}}"
                 elif choice == 'b':
                     pywikibot.bot.open_webbrowser(page)
+                elif choice == 'r':
+                    description_ready = True
+
+            if description_ready and (not copyright_game_ready and licensing_ready):
+                pywikibot.output("\t<<lightgreen>>Skipping<<default>> ready non-game file page.")
+                continue
+            if page_is_egg_texture:
+                if egg_texture_ready and copyright_game_ready:
+                    pywikibot.output("\t<<lightgreen>>Skipping<<default>> ready egg texture.")
+                    continue
+            else:
+                if description_ready and licensing_ready:
+                    pywikibot.output("\t<<lightgreen>>Skipping<<default>> ready game file page.")
+                    continue
+
             if description is None:
                 pywikibot.output("Type '[s]kip' to skip the image completely.")
                 description = pywikibot.input("Please describe the file:")
@@ -263,12 +294,13 @@ def main(*args):
                 continue
             # report what will happen
             pywikibot.showDiff(old_text, new_text, context=3)
+            edit_summary_elements.extend(template_edit_summary_element(old_text, new_text, 'Map screenshot'))
+            edit_summary_elements.extend(template_edit_summary_element(old_text, new_text, 'Screenshot'))
+            edit_summary_elements.extend(template_edit_summary_element(old_text, new_text, 'Egg texture'))
 
             automatic_edit = False
-            edit_summary_elements = []
             if page_is_egg_texture:
                 automatic_edit = True
-                edit_summary_elements.append('add [[Template:Egg texture]]')
             if not copyright_game_ready:
                 edit_summary_elements.append("{} [[Template:Copyright game]]".format(verb))
             edit_summary_elements.append(BOT_TASK_AD)
