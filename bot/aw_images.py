@@ -159,6 +159,7 @@ def main(*args):
             egg_texture_ready = False
             licensing_ready = False
             copyright_game_ready = False
+            licensing_template = 'Copyright game'
             if len(ts) > 0:
                 for t in ts:
                     template_name = t[0].title()
@@ -167,6 +168,7 @@ def main(*args):
                         if r in template_name:
                             pywikibot.output("Page {0} has licensing template: <<lightblue>>{1}<<default>>".format(page_title, template_name))
                             licensing_ready = True
+                            licensing_template = template_name[9:]
                             break
                     for r in templates_description_ready:
                         if r in template_name:
@@ -291,8 +293,8 @@ def main(*args):
                 {0}
 
                 == Licensing ==
-                {{{{Copyright game}}}}
-                """.format(description.strip())).strip()
+                {{{{{1}}}}}
+                """.format(description.strip(), licensing_template.strip())).strip()
             header = header.strip()
             if not got_summary_from_header and len(header) > 0:
                 new_text = header + '\n\n' + new_text
