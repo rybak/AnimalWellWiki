@@ -322,7 +322,7 @@ def main(*args):
             if page_is_egg_texture:
                 # automatic_edit = True
                 pass
-            if not copyright_game_ready:
+            if not copyright_game_ready and not licensing_ready:
                 edit_summary_elements.append("{} [[Template:Copyright game]]".format(verb))
             edit_summary_elements.append(BOT_TASK_AD)
             base_summary = "; ".join(edit_summary_elements)
