@@ -92,7 +92,7 @@ def put_text(page, new, summary, count, asynchronous=False):
 
 
 LOCATION_REGEX = re.compile('[lL]ocation([.]| of)?')
-DIGITS_REGEX = re.compile('[0-9]')
+DIGITS_REGEX = re.compile('[0-9]+')
 
 
 def main(*args):
