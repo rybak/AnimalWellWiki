@@ -132,7 +132,8 @@ def main(*args):
         return []
 
 
-    templates_licensing_ready = ['Copyright game', 'CC0', 'CC-BY-SA-3.0', 'Copyright missing', 'Delete', 'CC-BY-NC-SA']
+    templates_licensing_ready = ['Copyright game', 'CC0', 'CC-BY-SA-3.0', 'Copyright missing', 'Delete', 'CC-BY-NC-SA',
+            'PD-shape']
     templates_description_ready = ['Map screenshot', 'Screenshot', 'File information', 'Datamined texture']
     site = pywikibot.Site()
     looked_at = set()
