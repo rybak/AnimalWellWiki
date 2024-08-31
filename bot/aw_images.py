@@ -146,6 +146,8 @@ def main(*args):
             looked_at.add(page.title())
         try:
             page_title = page.title()
+            if page_title == 'File:Egg-Example.png':
+                continue
             page_is_egg_texture = page_title.startswith('File:Egg-')
             if page_is_egg_texture:
                 pywikibot.output("Detected <<lightblue>>egg texture<<default>> page name.")
